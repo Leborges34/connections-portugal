@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
 
 interface AuthContextType {
   user: any;
@@ -23,11 +22,17 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const { isLoaded, isSignedIn, signOut } = useClerkAuth();
-  const { user } = useUser();
+  const [isLoaded, setIsLoaded] = useState(true);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [user, setUser] = useState(null);
+
+  const signOut = async () => {
+    setIsSignedIn(false);
+    setUser(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isLoaded: isLoaded || false, isSignedIn: isSignedIn || false, signOut }}>
+    <AuthContext.Provider value={{ user, isLoaded, isSignedIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
