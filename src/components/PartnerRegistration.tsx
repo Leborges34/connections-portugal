@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSignUp } from '@clerk/clerk-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const PartnerRegistration: React.FC = () => {
   const navigate = useNavigate();
-  const { signUp, isLoaded } = useSignUp();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,6 +15,8 @@ const PartnerRegistration: React.FC = () => {
     location: '',
     phone: '',
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -25,25 +27,39 @@ const PartnerRegistration: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!isLoaded) return;
+    setError('');
+    setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
-      alert('As senhas não coincidem');
+      setError('As senhas não coincidem');
+      setLoading(false);
+      return;
+    }
+
+    if (parseInt(formData.age) < 18) {
+      setError('Você deve ter pelo menos 18 anos');
+      setLoading(false);
       return;
     }
 
     try {
-      await signUp.create({
+      const success = await signUp({
         firstName: formData.firstName,
         lastName: formData.lastName,
-        emailAddress: formData.email,
+        email: formData.email,
         password: formData.password,
+        role: 'partner'
       });
 
-      navigate('/partner-complete-profile');
+      if (success) {
+        navigate('/partner/complete-profile');
+      } else {
+        setError('Erro ao criar conta');
+      }
     } catch (error) {
-      console.error('Registration error:', error);
+      setError('Erro ao criar conta');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -151,11 +167,16 @@ const PartnerRegistration: React.FC = () => {
             />
           </div>
 
+          {error && (
+            <div className="text-red-400 text-sm">{error}</div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-md transition-colors"
+            disabled={loading}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-medium py-3 px-6 rounded-md transition-colors"
           >
-            Criar Conta de Parceiro
+            {loading ? 'Criando Conta...' : 'Criar Conta de Parceiro'}
           </button>
         </form>
 
